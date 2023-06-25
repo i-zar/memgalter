@@ -1,5 +1,6 @@
 import os
 os.chdir("/tmp")
+import requests
 
 from datetime import datetime, timedelta, timezone
 
@@ -38,7 +39,13 @@ async def main():
 
     greeting = '''Лучший мем недели запилен {}. Мем собрал {} реакций. Поприветствуем повелителя Социомемасечной!'''.format(winning_stack.winner['author'], winning_stack.winner['votes'])
 
-    await bot.send_message(PeerChannel(reporting_channel_name), greeting, reply_to=winning_stack.winner['message_id'])
+    bot_payload = {
+        'chat_id': '-100'+ str(channel_id),
+        'text': greeting,
+        'reply_to_message_id': winning_stack.winner['message_id']
+    }
+    reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
+    print(reply.json())
 
 class WinningStack:
 
