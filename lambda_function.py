@@ -8,14 +8,13 @@ from telethon import TelegramClient, functions
 from telethon.tl.types import PeerChannel
 from telethon.sessions import StringSession
 
-api_id = 26062203
-api_hash = 'f1cd7f14a6ec31efad6290400891a8d4'
-session_name = 'anon'
-channel_id = 1528273681
-reporting_channel_name = 1528273681
+api_id = os.environ.get('APIID')
+api_hash = os.environ.get('APIHASH')
+channel_id = int(os.environ.get('MAINCHANNEL'))
+reporting_channel_id = int(os.environ.get('REPORTINGCHANNEL'))
 session_string = os.environ.get('TGSESSION')
 client = TelegramClient(StringSession(session_string), api_id, api_hash)
-bot_token = '6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM'
+bot_token = os.environ.get('BOTTOKEN')
 bot = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
 
 async def main():
@@ -39,12 +38,18 @@ async def main():
 
     greeting = '''Лучший мем недели запилен {}. Мем собрал {} реакций. Поприветствуем повелителя Социомемасечной!'''.format(winning_stack.winner['author'], winning_stack.winner['votes'])
 
-    bot_payload = {
-        'chat_id': '-100'+ str(channel_id),
-        'text': greeting,
-        'reply_to_message_id': winning_stack.winner['message_id']
-    }
-    reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
+    if channel_id == reporting_channel_id:
+        bot_payload = {
+            'chat_id': '-100'+ str(reporting_channel_id),
+            'text': greeting,
+            'reply_to_message_id': winning_stack.winner['message_id']
+        }
+    else:
+        bot_payload = {
+            'chat_id': '-100'+ str(reporting_channel_id),
+            'text': greeting
+        }
+        reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
     print(reply.json())
 
 class WinningStack:
@@ -63,3 +68,6 @@ class WinningStack:
 def lambda_handler(*args):
     with client:
         client.loop.run_until_complete(main())
+
+if __name__ == '__main__':
+    lambda_handler()
