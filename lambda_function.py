@@ -29,6 +29,7 @@ async def main():
         if message.reactions:
             for emoji in message.reactions.to_dict()['results']:
                 vote_count += emoji['count']
+            print(message.reactions.to_dict())
         user_object = await client.get_entity(message.from_id)
         user_name = user_object.first_name
         if user_object.last_name:
@@ -49,7 +50,7 @@ async def main():
             'chat_id': '-100'+ str(reporting_channel_id),
             'text': greeting
         }
-        reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
+    reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
     print(reply.json())
 
 class WinningStack:
