@@ -41,36 +41,52 @@ async def main():
         if user_object.last_name:
             user_name += (' ' + user_object.last_name)
         winning_stack.update_stack(vote_count, message.id, message.date, user_name)
-    print(winning_stack.winner, winning_stack.contender)
+    print(winning_stack.get_winner())
+    print(winning_stack.get_contenders())
+    winner = winning_stack.get_winner()
 
-    greeting = '''Лучший мем недели запилен {}. Мем собрал {} реакций. Поприветствуем нового Повелителя Социомемасечной!'''.format(winning_stack.winner['author'], winning_stack.winner['votes'])
+    greeting = '''Лучший мем недели запилен {}. Мем собрал {} реакций. Поприветствуем нового Повелителя Социомемасечной!'''.format(winner['author'], winner['votes'])
 
-    if channel_id == reporting_channel_id:
-        bot_payload = {
-            'chat_id': '-100'+ str(reporting_channel_id),
-            'text': greeting,
-            'reply_to_message_id': winning_stack.winner['message_id']
-        }
+    if channel_id != reporting_channel_id:
+        send_channel_update(reporting_channel_id, greeting)
     else:
-        bot_payload = {
-            'chat_id': '-100'+ str(reporting_channel_id),
-            'text': greeting
-        }
-    reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
-    print(reply.json())
+        send_channel_update(reporting_channel_id, greeting, winner['message_id'])
+
+    send_channel_update(reporting_channel_id, "Еще в Топ-5 мемов недели:")
+    pretendents = winning_stack.get_contenders()
+    for pretendent in pretendents:
+        message = '{} , реакций: {}'.format(pretendent['author'], pretendent['votes'])
+        if channel_id != reporting_channel_id:
+            send_channel_update(reporting_channel_id, message)
+        else:
+            send_channel_update(reporting_channel_id, message, pretendent['message_id'])
+
 
 class WinningStack:
 
     def __init__(self):
-        self.winner = {'votes':0, 'message_id':0, 'timestamp':0, 'author':0}
-        self.contender = {'votes':0, 'message_id':0, 'timestamp':0, 'author':0}
+        self.stack = [{'votes':0, 'message_id':0, 'timestamp':0, 'author':0}]
 
     def update_stack(self, votes, message_id, timestamp, author):
-        if votes > self.winner['votes']:
-            self.contender = self.winner.copy()
-            self.winner = {'votes': votes, 'message_id': message_id, 'timestamp':timestamp, 'author': author}
-        elif votes > self.contender['votes']:
-            self.contender = {'votes': votes, 'message_id': message_id, 'timestamp':timestamp, 'author': author}
+        if votes > self.stack[-1]['votes'] or len(self.stack) <=5:
+            self.stack.append({'votes':votes, 'message_id':message_id, 'timestamp':timestamp, 'author':author})
+            self.stack = sorted(self.stack, key=lambda d: d['votes'], reverse=True)
+        if len(self.stack) > 5:
+            self.stack = self.stack[0:5]
+
+    def get_winner(self):
+        return self.stack[0]
+    
+    def get_contenders(self):
+        return self.stack[1:]
+    
+def send_channel_update(channel, message, replied_message=None):
+    
+    bot_payload = {'chat_id': '-100'+ str(channel), 'text': message}
+    if replied_message:
+        bot_payload['reply_to_message_id'] = replied_message
+    reply = requests.get('https://api.telegram.org/bot6012872667:AAGsHn6v9vojwCiLLgSOy1KYoClW-auRFfM/sendMessage', params=bot_payload)
+    print(reply.json())
 
 def lambda_handler(*args):
     with client:
