@@ -27,9 +27,15 @@ async def main():
             break
         vote_count = 0
         if message.reactions:
-            for emoji in message.reactions.to_dict()['results']:
-                vote_count += emoji['count']
-            print(message.reactions.to_dict())
+            result = await client(functions.messages.GetMessageReactionsListRequest(
+                    peer=channelusername,
+                    id=message.id,
+                    limit=100
+                ))
+            voted_users = set()
+            for reaction in result.reactions:
+                voted_users.add(reaction.peer_id.user_id)
+            vote_count = len(voted_users)
         user_object = await client.get_entity(message.from_id)
         user_name = user_object.first_name
         if user_object.last_name:
@@ -37,7 +43,7 @@ async def main():
         winning_stack.update_stack(vote_count, message.id, message.date, user_name)
     print(winning_stack.winner, winning_stack.contender)
 
-    greeting = '''Лучший мем недели запилен {}. Мем собрал {} реакций. Поприветствуем повелителя Социомемасечной!'''.format(winning_stack.winner['author'], winning_stack.winner['votes'])
+    greeting = '''Лучший мем недели запилен {}. Мем собрал {} реакций. Поприветствуем нового Повелителя Социомемасечной!'''.format(winning_stack.winner['author'], winning_stack.winner['votes'])
 
     if channel_id == reporting_channel_id:
         bot_payload = {
